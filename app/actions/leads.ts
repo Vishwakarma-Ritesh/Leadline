@@ -1,5 +1,6 @@
 "use server";
 
+import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -35,7 +36,11 @@ export async function createLead(
 
   try {
     const supabase = createServerSupabaseClient();
-    const { error } = await supabase.from("leads").insert(parsed.data);
+    const { error } = await supabase.from("leads").insert({
+      ...parsed.data,
+      status: "New",
+      note: null,
+    });
 
     if (error) {
       console.error("Lead creation failed:", error.message);
@@ -57,6 +62,8 @@ export async function updateLeadStatus(
   id: string,
   status: LeadStatus,
 ): Promise<ActionState> {
+  await auth.protect();
+
   const parsed = updateStatusSchema.safeParse({ id, status });
 
   if (!parsed.success) {
@@ -87,6 +94,8 @@ export async function updateLeadNote(
   id: string,
   note: string,
 ): Promise<ActionState> {
+  await auth.protect();
+
   const parsed = updateNoteSchema.safeParse({ id, note });
 
   if (!parsed.success) {
@@ -117,6 +126,8 @@ export async function updateLeadNote(
 }
 
 export async function deleteLead(id: string): Promise<ActionState> {
+  await auth.protect();
+
   const parsed = leadIdSchema.safeParse(id);
 
   if (!parsed.success) {
