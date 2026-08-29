@@ -83,8 +83,16 @@ export function DemoForm() {
       ref={formRef}
       action={formAction}
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-white/70 bg-white p-5 shadow-[0_24px_65px_rgba(17,26,46,0.14)] sm:p-7"
+      className="rounded-[2rem] border border-white/80 bg-white p-5 shadow-[0_28px_80px_rgba(5,12,28,0.28)] sm:p-8"
     >
+      <div className="mb-7">
+        <p className="text-lg font-semibold tracking-[-0.025em] text-ink">
+          Request your demo
+        </p>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+          Share a few details and we’ll be in touch.
+        </p>
+      </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field
           id="name"
