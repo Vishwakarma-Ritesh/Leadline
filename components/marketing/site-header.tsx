@@ -33,7 +33,7 @@ export function SiteHeader() {
             className="transition-colors hover:text-ink"
             href="/dashboard"
           >
-            Sign in
+            Dashboard
           </Link>
         </nav>
 
