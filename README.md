@@ -1,100 +1,203 @@
 # Leadline
 
-Leadline is a focused lead-capture and management experience built for the Qubit
-full-stack take-home assessment. Small businesses can submit sales enquiries on
-the public marketing page, then review and manage them in a simple internal
-dashboard.
+Leadline is a focused lead-capture and management application built for the Qubit Full Stack Developer take-home assessment.
 
-The product intentionally has two surfaces:
+Small businesses can submit sales enquiries through the public marketing page and manage those leads through an authenticated internal dashboard.
 
-- `/` — marketing page, pricing, and Request a Demo form
-- `/dashboard` — lead search, filtering, status updates, notes, and deletion
+## Overview
 
-## Tech stack
+Leadline provides two primary surfaces:
 
-- Next.js App Router and React
-- TypeScript
-- Tailwind CSS
-- Minimal shadcn/ui-style Radix primitives
-- Supabase PostgreSQL
-- Zod validation
-- Vercel-ready deployment
+- `/` — Public marketing page with pricing and Request a Demo form
+- `/dashboard` — Authenticated lead management dashboard
 
-## Run locally
+### Public Marketing Page
 
-Requirements: Node.js 20.9 or newer and npm.
+- Premium responsive SaaS-style landing page
+- Hero section with clear call to action
+- Features section
+- Pricing section
+- Request a Demo form
+- Name, email, company, and message fields
+- Client-side validation
+- Loading, success, and error states
+- Lead submissions persisted to Supabase
+- Publicly accessible without authentication
 
-1. Install dependencies:
+### Lead Dashboard
 
-   ```bash
-   npm install
-   ```
+- Clerk-protected `/dashboard`
+- View submitted leads
+- Search by name or company
+- Filter by lead status
+- Change lead status
+- Add and edit internal notes
+- Delete leads with confirmation
+- Loading and empty states
+- Responsive table/card layout
+- Changes persist after page refresh
 
-2. Copy `.env.example` to `.env.local` and add your Supabase values:
+## Tech Stack
 
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-   ```
+- **Next.js 16** — App Router and server-side functionality
+- **React** — UI and component architecture
+- **TypeScript** — Type-safe development
+- **Tailwind CSS** — Styling and responsive layouts
+- **shadcn/ui** — Accessible UI components and primitives
+- **Clerk** — Authentication and dashboard protection
+- **Supabase PostgreSQL** — Database and lead persistence
+- **Zod** — Form validation
+- **Vercel** — Deployment
 
-3. Create the database schema by running
-   `supabase/migrations/001_create_leads.sql` in the Supabase SQL Editor.
+## Architecture
 
-4. Start the development server:
+The application follows a simple Next.js architecture.
 
-   ```bash
-   npm run dev
-   ```
+- Public marketing UI is served from `/`
+- Dashboard UI is served from `/dashboard`
+- Clerk handles authentication and protects dashboard access
+- Server Actions handle lead reads and mutations
+- Supabase provides PostgreSQL persistence
+- Zod handles request validation
+- Tailwind CSS provides responsive styling
+- shadcn/ui components are used selectively where they improve usability
 
-5. Open `http://localhost:3000`, submit the demo form, then open
-   `http://localhost:3000/dashboard`.
+Lead data is handled through the server rather than exposing direct browser-side database operations.
 
-## Database schema
+## Project Structure
 
-The app uses one `public.leads` table:
+```text
+leadline/
+├── app/
+│   ├── dashboard/
+│   ├── sign-in/
+│   ├── sign-up/
+│   ├── actions/
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   ├── dashboard/
+│   ├── marketing/
+│   └── ui/
+├── lib/
+│   ├── supabase/
+│   ├── validations/
+│   └── utils.ts
+├── public/
+├── supabase/
+│   └── migrations/
+├── types/
+├── .env.example
+├── .gitignore
+├── next.config.ts
+├── package.json
+├── proxy.ts
+└── README.md
+```
 
-- `id` — UUID primary key
-- `name`, `email`, `company`, `message` — required text
-- `status` — `New`, `Contacted`, `Qualified`, or `Lost`
-- `note` — optional text
-- `created_at`, `updated_at` — timezone-aware timestamps
+## Database Schema
 
-The migration also adds field constraints, useful search/status indexes, an
-`updated_at` trigger, and Row Level Security policies.
+The application uses a single `public.leads` table.
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | UUID | Primary key |
+| `name` | Text | Lead name |
+| `email` | Text | Lead email |
+| `company` | Text | Company name |
+| `message` | Text | Demo request message |
+| `status` | Text | New, Contacted, Qualified, or Lost |
+| `note` | Text | Optional internal note |
+| `created_at` | Timestamp | Lead creation time |
+| `updated_at` | Timestamp | Last update time |
+
+The migration includes field constraints, indexes for common searches, an `updated_at` trigger, and Row Level Security policies.
 
 ## Why Supabase
 
-Supabase provides hosted PostgreSQL, a small JavaScript client, schema-level
-constraints, and straightforward Vercel compatibility. It keeps this
-assessment's data layer production-shaped without adding a separate backend
-framework.
+Supabase was chosen because it provides hosted PostgreSQL, a lightweight JavaScript client, database-level constraints, and straightforward integration with Next.js and Vercel.
 
-All reads and mutations are called from Server Components or Server Actions.
-The browser does not query Supabase directly.
+For this assessment, it keeps the data layer simple while still providing a relational schema and persistent CRUD operations.
 
-## Important assessment trade-off
+All lead reads and mutations are handled through Next.js Server Actions rather than direct browser-to-database requests.
 
-Authentication is explicitly out of scope, while the dashboard must read and
-mutate leads using only the anonymous Supabase key. The included migration
-therefore permits anonymous insert, select, update, and delete operations.
-That is acceptable only for this assessment demo: `/dashboard` and its data are
-public.
+## Authentication & Security
 
-For a real product, the dashboard policies should require an authenticated team
-member. The server-side data boundary means that change would not require a UI
-rewrite.
+Clerk protects the `/dashboard` route and the Server Actions responsible for reading, updating, and deleting lead data.
 
-## Other trade-offs
+The public marketing page and Request a Demo form remain accessible without authentication so visitors can submit enquiries.
 
-- Search and filtering happen in memory. This keeps interaction instant and
-  avoids extra requests for the expected take-home dataset; server-side
-  pagination would be appropriate at larger scale.
-- Mutations refresh the server-rendered dashboard after a successful local
-  update. Supabase Realtime was omitted because it is not required.
-- The dashboard switches from a table to purpose-built cards below large
-  desktop widths so every field remains readable without a cramped table.
+The application does not expose direct browser-side Supabase queries for lead management.
 
-## Quality checks
+For a production system, Clerk identities should be connected to Supabase Row Level Security using Supabase Third-Party Auth or an appropriate server-only database role. The current setup retains the assessment-compatible policies required for the public demo form.
+
+## Installation
+
+### Prerequisites
+
+- [Node.js 20.9+](https://nodejs.org/)
+- npm
+- Supabase project
+- Clerk application
+
+### Install Dependencies
+
+```bash
+npm install
+```
+
+### Environment Variables
+
+Copy `.env.example` to `.env.local`:
+
+```bash
+cp .env.example .env.local
+```
+
+Add the required Supabase and Clerk environment variables to `.env.local`.
+
+> Never commit `.env.local` or production secrets to Git.
+
+### Database Setup
+
+Authenticate and link the Supabase CLI:
+
+```bash
+npx supabase login
+npx supabase link --project-ref your-project-ref
+npx supabase db push
+```
+
+Alternatively, run `supabase/migrations/001_create_leads.sql` in the Supabase SQL Editor.
+
+## Getting Started
+
+### Run Locally
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+The application will be available at:
+
+```text
+http://localhost:3000
+```
+
+You can then:
+
+1. Open the public marketing page.
+2. Submit a Request a Demo form.
+3. Sign in through Clerk.
+4. Open `/dashboard`.
+5. Manage the submitted lead.
+
+### Build for Production
+
+Run the production checks:
 
 ```bash
 npm run typecheck
@@ -102,43 +205,150 @@ npm run lint
 npm run build
 ```
 
-Manual test flow:
+## Testing & Quality Checks
 
-1. Submit a valid and invalid demo request.
-2. Confirm the new lead appears on `/dashboard`.
-3. Search by name and company, then filter every status.
-4. Change status and add/edit a note.
-5. Refresh and confirm changes persist.
-6. Cancel a deletion, then confirm a deletion.
-7. Verify empty, loading, no-results, success, and error states.
-8. Repeat at desktop, tablet, and mobile widths.
+The application was manually tested across:
 
-## Deploy to Vercel
+- Valid demo form submissions
+- Invalid form submissions
+- Form loading, success, and error states
+- Lead creation and database persistence
+- Search by name and company
+- Status filtering
+- Status changes
+- Adding and editing notes
+- Delete confirmation
+- Lead deletion
+- Empty and no-results states
+- Dashboard authentication
+- Desktop, tablet, and mobile layouts
 
-1. Import the repository into Vercel.
-2. Add both Supabase environment variables to the Vercel project.
-3. Deploy with the standard Next.js preset.
-4. Repeat the manual test flow against the production URL.
+The following commands are used for local quality checks:
+
+```bash
+npm run typecheck
+npm run lint
+npm run build
+```
+
+## Trade-offs
+
+### Client-side Search and Filtering
+
+Search and filtering are handled on the client for the expected small dataset. This keeps interactions immediate and avoids unnecessary requests.
+
+For a larger production dataset, filtering, pagination, and sorting would be moved to the database.
+
+### Simple State Management
+
+The application uses local React state instead of introducing a global state-management library.
+
+The current application has a relatively small data flow, so additional state infrastructure would add unnecessary complexity.
+
+### No Real-time Synchronization
+
+Dashboard mutations refresh the server-rendered data after successful changes.
+
+Supabase Realtime was intentionally omitted because real-time synchronization was not part of the core assessment requirements.
+
+## What I Would Improve With More Time
+
+- Connect Clerk identities directly to Supabase RLS
+- Add server-side pagination, sorting, and filtering
+- Add focused automated tests for form validation and Server Actions
+- Add optimistic UI updates for dashboard mutations
+- Add additional accessibility and performance testing
+- Add role-based permissions if multiple dashboard users were required
+
+## Deployment
+
+### Vercel
+
+Leadline is designed to be deployed using Vercel.
+
+1. Import the GitHub repository into Vercel.
+2. Select the standard Next.js configuration.
+3. Add the required Supabase and Clerk environment variables.
+4. Deploy the application.
+5. Verify the marketing page, Request a Demo form, authentication, and dashboard using the live URL.
 
 No custom Vercel configuration is required.
 
-## With more time
+## Contributing
 
-- Add authentication and replace the assessment-only anonymous dashboard RLS
-  policies.
-- Add server-side pagination if the lead volume grows substantially.
-- Add a small focused test suite for validation and Server Actions.
+1. Create a feature branch:
 
-## Current setup status
+```bash
+git checkout -b feature/your-feature
+```
 
-The application code, migration, and deployment configuration are complete.
-Applying the migration, supplying real environment values, and creating the
-Vercel deployment require access to the target Supabase and Vercel projects.
+2. Make your changes and test thoroughly.
+3. Follow the existing TypeScript, React, and Next.js conventions.
+4. Run the quality checks:
 
-## AI assistance
+```bash
+npm run typecheck
+npm run lint
+npm run build
+```
 
-Cursor and AI assistance were used to review the supplied visual references,
-plan the component architecture, draft implementation code, and run code
-quality checks. The final scope, product decisions, database model, and
-assessment trade-offs remain documented here so every part of the submission
-can be explained and reviewed.
+5. Write clear, meaningful commit messages.
+6. Submit a pull request.
+
+### Coding Standards
+
+- Use TypeScript for application code.
+- Follow React and Next.js best practices.
+- Use ESLint to maintain code quality.
+- Keep components focused and reusable.
+- Use meaningful variable, function, and component names.
+- Avoid unnecessary dependencies and over-engineering.
+- Keep commits focused on a single logical change.
+
+## License
+
+This project was created as part of the Qubit Full Stack Developer take-home assessment.
+
+## Support
+
+For issues, questions, or contributions:
+
+- Create an issue in the repository.
+- Review the project documentation.
+- Check the relevant framework or service documentation.
+
+## Resources
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [React Documentation](https://react.dev/)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [shadcn/ui Documentation](https://ui.shadcn.com/)
+- [Clerk Documentation](https://clerk.com/docs)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Zod Documentation](https://zod.dev/)
+- [Vercel Documentation](https://vercel.com/docs)
+
+## AI Assistance
+
+AI tools were used during development:
+
+- **ChatGPT** — development planning, architecture guidance, and review of implementation decisions.
+
+## Current Status
+
+The core Leadline assessment requirements are implemented, including:
+
+- Public marketing page
+- Working Request a Demo form
+- Supabase persistence
+- Clerk authentication
+- Protected dashboard
+- Lead search and filtering
+- Lead status management
+- Lead notes
+- Lead deletion
+- Responsive UI
+- Loading, empty, success, and error states
+
+Automated tests and production-level Clerk/Supabase identity integration were not implemented within the assessment time constraint.
