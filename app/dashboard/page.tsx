@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { UserButton } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 
@@ -16,6 +18,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 async function getLeads(): Promise<Lead[]> {
+  await auth.protect({ unauthenticatedUrl: "/sign-in" });
+
   const supabase = createServerSupabaseClient();
   const { data, error } = await supabase
     .from("leads")
@@ -36,29 +40,38 @@ export default async function DashboardPage() {
   const leads = await getLeads();
 
   return (
-    <div className="min-h-screen bg-[#f5f7fb]">
-      <header className="border-b border-border bg-white">
-        <div className="mx-auto flex h-18 w-[min(100%-2rem,90rem)] items-center justify-between">
+    <div className="min-h-screen bg-[#f7f9fc]">
+      <header className="border-b border-[#e8ebf0] bg-white">
+        <div className="mx-auto flex h-16 w-[min(100%-2rem,80rem)] items-center justify-between sm:w-[min(100%-3rem,80rem)]">
           <Brand />
-          <Button asChild size="sm" variant="outline">
-            <Link href="/">
-              <ArrowLeft className="sm:hidden" />
-              <span className="hidden sm:inline">Back to website</span>
-              <ExternalLink className="hidden sm:block" />
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button
+              asChild
+              size="sm"
+              variant="ghost"
+              className="text-muted-foreground"
+            >
+              <Link href="/">
+                <ArrowLeft className="sm:hidden" />
+                <span className="hidden sm:inline">Back to website</span>
+                <ExternalLink className="hidden sm:block" />
+              </Link>
+            </Button>
+            <span className="h-6 w-px bg-[#e5e8ee]" aria-hidden="true" />
+            <UserButton />
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto w-[min(100%-2rem,90rem)] py-8 sm:py-12">
-        <div className="mb-8">
-          <span className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
+      <main className="mx-auto w-[min(100%-2rem,80rem)] py-7 sm:w-[min(100%-3rem,80rem)] sm:py-9">
+        <div className="mb-6">
+          <p className="text-xs font-medium text-muted-foreground">
             Lead management
-          </span>
-          <h1 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-ink sm:text-4xl">
+          </p>
+          <h1 className="mt-1 text-2xl font-bold tracking-[-0.04em] text-ink sm:text-3xl">
             Leads
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             Review new enquiries, keep follow-up context together, and update
             each lead as the conversation progresses.
           </p>

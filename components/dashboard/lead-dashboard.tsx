@@ -10,10 +10,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
+  BadgeCheck,
   CheckCircle2,
+  CircleDot,
   Inbox,
   LoaderCircle,
   Search,
+  Send,
+  UsersRound,
   X,
 } from "lucide-react";
 
@@ -59,6 +63,18 @@ export function LeadDashboard({ initialLeads }: { initialLeads: Lead[] }) {
     });
   }, [deferredQuery, filter, leads]);
 
+  const statusCounts = useMemo(
+    () =>
+      LEAD_STATUSES.reduce(
+        (counts, status) => ({
+          ...counts,
+          [status]: leads.filter((lead) => lead.status === status).length,
+        }),
+        {} as Record<LeadStatus, number>,
+      ),
+    [leads],
+  );
+
   function handleStatusChange(id: string, status: LeadStatus) {
     setPendingLeadId(id);
     setNotice(null);
@@ -98,15 +114,13 @@ export function LeadDashboard({ initialLeads }: { initialLeads: Lead[] }) {
     router.refresh();
   }
 
-  if (leads.length === 0) {
-    return <NoLeads />;
-  }
-
   return (
     <div>
+      <DashboardStats leads={leads} />
+
       {notice && (
         <div
-          className={`mb-5 flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm ${
+          className={`mt-5 flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm ${
             notice.type === "success"
               ? "border-[#bde9d8] bg-[#effbf6] text-[#16654e]"
               : "border-[#f2c7cc] bg-[#fff4f5] text-[#9d3040]"
@@ -131,9 +145,9 @@ export function LeadDashboard({ initialLeads }: { initialLeads: Lead[] }) {
         </div>
       )}
 
-      <div className="rounded-2xl border border-border bg-white p-3 shadow-[0_1px_2px_rgba(18,27,48,0.03)] sm:p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative w-full lg:max-w-sm">
+      <div className="mt-5 rounded-[1.35rem] border border-[#e7eaf0] bg-white p-3 shadow-[0_8px_24px_rgba(23,36,66,0.045)] sm:p-4">
+        <div className="flex items-center gap-3">
+          <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <label htmlFor="lead-search" className="sr-only">
               Search leads by name or company
@@ -143,69 +157,112 @@ export function LeadDashboard({ initialLeads }: { initialLeads: Lead[] }) {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search name or company…"
-              className="pl-10"
+              placeholder="Search by name or company…"
+              className="h-10 rounded-xl border-[#e7eaf0] bg-white pl-10 shadow-none"
             />
           </div>
+          <p
+            className="hidden shrink-0 text-xs text-muted-foreground sm:block"
+            aria-live="polite"
+          >
+            <span className="font-semibold text-foreground">
+              {visibleLeads.length}
+            </span>{" "}
+            of {leads.length}
+          </p>
+        </div>
 
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-[#eef0f4] pt-3">
           <div
-            className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 lg:mx-0 lg:pb-0"
+            className="-mx-1 flex min-w-0 gap-2 overflow-x-auto px-1 pb-1"
             aria-label="Filter leads by status"
           >
             {filters.map((status) => (
               <button
                 key={status}
                 type="button"
-                className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/35 ${
+                className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:ring-2 focus-visible:ring-primary/35 ${
                   filter === status
-                    ? "bg-ink text-white"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "border-[#1594cb] bg-[#1594cb] text-white shadow-sm"
+                    : "border-[#e5e8ee] bg-white text-[#68738a] hover:border-[#d3d8e2] hover:text-foreground"
                 }`}
                 onClick={() => setFilter(status)}
                 aria-pressed={filter === status}
               >
-                {status}
+                {status !== "All" && (
+                  <span
+                    className={`size-1.5 rounded-full ${statusDotClass(status)}`}
+                  />
+                )}
+                <span>{status}</span>
+                <span
+                  className={`rounded-full px-1.5 py-0.5 text-[10px] ${
+                    filter === status
+                      ? "bg-white/18 text-white"
+                      : "bg-[#f4f6f9] text-[#7a8498]"
+                  }`}
+                >
+                  {status === "All" ? leads.length : statusCounts[status]}
+                </span>
               </button>
             ))}
           </div>
+          {(query || filter !== "All") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden shrink-0 sm:inline-flex"
+              onClick={() => {
+                setQuery("");
+                setFilter("All");
+              }}
+            >
+              Clear
+            </Button>
+          )}
         </div>
       </div>
 
-      <div className="mt-5 flex items-center justify-between gap-3 px-1">
-        <p className="text-sm text-muted-foreground" aria-live="polite">
-          <span className="font-semibold text-foreground">
-            {visibleLeads.length}
-          </span>{" "}
-          {visibleLeads.length === 1 ? "lead" : "leads"}
-          {filter !== "All" ? ` marked ${filter.toLowerCase()}` : ""}
-        </p>
+      <div className="mt-5 flex items-center justify-between px-1">
+        <div>
+          <h2 className="text-sm font-semibold text-ink">All leads</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Enquiries ordered by most recent
+          </p>
+        </div>
         {(query || filter !== "All") && (
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            type="button"
+            className="text-xs font-semibold text-primary sm:hidden"
             onClick={() => {
               setQuery("");
               setFilter("All");
             }}
           >
             Clear filters
-          </Button>
+          </button>
         )}
       </div>
 
       {visibleLeads.length === 0 ? (
-        <NoResults onClear={() => {
-          setQuery("");
-          setFilter("All");
-        }} />
+        leads.length === 0 ? (
+          <NoLeads />
+        ) : (
+          <NoResults
+            onClear={() => {
+              setQuery("");
+              setFilter("All");
+            }}
+          />
+        )
       ) : (
         <>
-          <div className="mt-4 hidden overflow-hidden rounded-2xl border border-border bg-white shadow-[0_1px_2px_rgba(18,27,48,0.03)] xl:block">
-            <table className="w-full table-fixed text-left">
+          <div className="mt-3 hidden overflow-x-auto rounded-[1.35rem] border border-[#e5e8ee] bg-white shadow-[0_8px_28px_rgba(23,36,66,0.045)] lg:block">
+            <table className="w-full min-w-[1060px] table-fixed text-left">
               <caption className="sr-only">
                 Leads with contact details, enquiries, statuses, notes, and actions
               </caption>
-              <thead className="border-b border-border bg-[#f8fafc] text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+              <thead className="border-b border-[#e8ebf0] bg-[#fafbfc] text-[10px] font-semibold uppercase tracking-[0.1em] text-[#7a8498]">
                 <tr>
                   <th className="w-[17%] px-5 py-3.5">Lead</th>
                   <th className="w-[14%] px-4 py-3.5">Company</th>
@@ -294,7 +351,7 @@ export function LeadDashboard({ initialLeads }: { initialLeads: Lead[] }) {
             </table>
           </div>
 
-          <div className="mt-4 grid gap-3 xl:hidden">
+          <div className="mt-3 grid gap-3 lg:hidden">
             {visibleLeads.map((lead) => (
               <article
                 key={lead.id}
@@ -383,6 +440,66 @@ export function LeadDashboard({ initialLeads }: { initialLeads: Lead[] }) {
   );
 }
 
+function DashboardStats({ leads }: { leads: Lead[] }) {
+  const cards = [
+    {
+      label: "Total leads",
+      value: leads.length,
+      icon: UsersRound,
+      iconClass: "bg-[#e8f7fc] text-[#168bb8]",
+    },
+    {
+      label: "New enquiries",
+      value: leads.filter((lead) => lead.status === "New").length,
+      icon: CircleDot,
+      iconClass: "bg-[#e9f0ff] text-[#4b70da]",
+    },
+    {
+      label: "Contacted",
+      value: leads.filter((lead) => lead.status === "Contacted").length,
+      icon: Send,
+      iconClass: "bg-[#f1eaff] text-[#7950b6]",
+    },
+    {
+      label: "Qualified",
+      value: leads.filter((lead) => lead.status === "Qualified").length,
+      icon: BadgeCheck,
+      iconClass: "bg-[#e4f8f0] text-[#218d6b]",
+    },
+  ];
+
+  return (
+    <section
+      aria-label="Lead summary"
+      className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+    >
+      {cards.map((card) => {
+        const Icon = card.icon;
+        return (
+          <article
+            key={card.label}
+            className="flex min-h-22 items-center gap-3 rounded-[1.35rem] border border-[#e7eaf0] bg-white px-4 py-4 shadow-[0_8px_24px_rgba(23,36,66,0.04)] sm:gap-4 sm:px-5"
+          >
+            <span
+              className={`grid size-10 shrink-0 place-items-center rounded-full ${card.iconClass}`}
+            >
+              <Icon className="size-4.5" strokeWidth={1.8} />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-[11px] font-medium text-muted-foreground">
+                {card.label}
+              </span>
+              <span className="mt-0.5 block text-xl font-bold tracking-[-0.035em] text-ink">
+                {card.value}
+              </span>
+            </span>
+          </article>
+        );
+      })}
+    </section>
+  );
+}
+
 function StatusSelect({
   lead,
   pending,
@@ -443,7 +560,7 @@ function Avatar({ name }: { name: string }) {
 
 function NoLeads() {
   return (
-    <div className="rounded-2xl border border-dashed border-border bg-white px-6 py-20 text-center">
+    <div className="mt-3 rounded-[1.35rem] border border-dashed border-[#dfe4ec] bg-white px-6 py-16 text-center shadow-[0_8px_24px_rgba(23,36,66,0.035)]">
       <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-secondary text-primary">
         <Inbox className="size-6" />
       </span>
@@ -462,7 +579,7 @@ function NoLeads() {
 
 function NoResults({ onClear }: { onClear: () => void }) {
   return (
-    <div className="mt-4 rounded-2xl border border-dashed border-border bg-white px-6 py-16 text-center">
+    <div className="mt-3 rounded-[1.35rem] border border-dashed border-[#dfe4ec] bg-white px-6 py-16 text-center shadow-[0_8px_24px_rgba(23,36,66,0.035)]">
       <Search className="mx-auto size-6 text-muted-foreground" />
       <h2 className="mt-4 text-base font-semibold text-ink">No matching leads</h2>
       <p className="mt-2 text-sm text-muted-foreground">
