@@ -24,7 +24,7 @@ export function Hero() {
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_bottom,transparent_42%,rgba(1,51,36,0.12)_62%,rgba(2,46,33,0.76)_100%)]" />
 
       <div className="page-shell flex min-h-[100svh] items-end pb-18 sm:pb-22 lg:pb-24">
-        <div className="grid w-full items-end gap-8 border-t border-white/25 pt-8 md:grid-cols-[1fr_auto] md:gap-16 lg:pt-10">
+        <div className="grid w-full items-end gap-8 pt-8 md:grid-cols-[1fr_auto] md:gap-16 lg:pt-10">
           <div className="max-w-3xl">
             <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
               Enquiries, clearly managed
