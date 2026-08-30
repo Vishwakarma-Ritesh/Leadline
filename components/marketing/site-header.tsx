@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
+import { MobileMenu } from "@/components/marketing/mobile-menu";
 import { Button } from "@/components/ui/button";
 
 export function SiteHeader() {
@@ -37,16 +38,19 @@ export function SiteHeader() {
           </Link>
         </nav>
 
-        <Button
-          asChild
-          size="sm"
-          className="bg-ink px-5 text-white shadow-[0_8px_24px_rgba(17,26,46,0.16)] hover:bg-[#222e48]"
-        >
-          <a href="#demo">
-            Get a demo
-            <ArrowUpRight />
-          </a>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            asChild
+            size="sm"
+            className="bg-ink px-5 text-white shadow-[0_8px_24px_rgba(17,26,46,0.16)] hover:bg-[#222e48]"
+          >
+            <a href="#demo">
+              Get a demo
+              <ArrowUpRight />
+            </a>
+          </Button>
+          <MobileMenu />
+        </div>
       </div>
     </header>
   );
